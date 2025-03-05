@@ -20,7 +20,6 @@ class WallFollower(Node):
         self.kd=0.5 #1.5 (4)
         #ki (10)
 
-
         self.prev_error = 0.0
 
         # Declare parameters to make them available for use
@@ -30,7 +29,7 @@ class WallFollower(Node):
         self.declare_parameter("side", -1)
         self.declare_parameter("velocity", 1.0)
         self.declare_parameter("desired_distance", 1.0)
-
+        self.declare_parameter('using_real_car', True)
 
         # Fetch constants from the ROS parameter server
         # DO NOT MODIFY THIS! This is necessary for the tests to be able to test varying parameters!
@@ -39,19 +38,14 @@ class WallFollower(Node):
         self.SIDE = self.get_parameter('side').get_parameter_value().integer_value
         #self.SIDE = 1 #-1 right
         self.VELOCITY = self.get_parameter('velocity').get_parameter_value().double_value
-        self.DESIRED_DISTANCE = self.get_parameter('desired_distance').get_parameter_value().double_value
+        self.DESIRED_DISTANCE = self.get_parameter('desired_distance').get_parameter_value().double_value      
 
         # This activates the parameters_callback function so that the tests are able
         # to change the parameters during testing.
         # DO NOT MODIFY THIS! 
-        self.add_on_set_parameters_callback(self.parameters_callback)
-  
-        # TODO: Initialize your publishers and subscribers here
+        # self.add_on_set_parameters_callback(self.parameters_callback)
 
-        # TODO: Write your callback functions here    
-
-	    # TODO: Initialize your publishers and subscribers here
-         #ADDED subscribe to lidar data (subscibe to SCN_TOPIC), listens for messages of type LaserScan, when msg arrives lidar_callback called
+        #ADDED subscribe to lidar data (subscibe to SCN_TOPIC), listens for messages of type LaserScan, when msg arrives lidar_callback called
         self.subscription=self.create_subscription(LaserScan, self.SCAN_TOPIC, self.lidar_callback, 1)
         self.subscription 
         #ADDED publish drive,  publishes msgs of type AckermannDriveStamped to topic DRIVE_TOPIC
