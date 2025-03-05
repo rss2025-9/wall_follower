@@ -26,9 +26,9 @@ class WallFollower(Node):
         # DO NOT MODIFY THIS! 
         self.declare_parameter("scan_topic", "/scan")
         self.declare_parameter("drive_topic", "/vesc/high_level/input/nav_0")
-        self.declare_parameter("side", -1)
+        self.declare_parameter("side", 1)
         self.declare_parameter("velocity", 1.0)
-        self.declare_parameter("desired_distance", 1.0)
+        self.declare_parameter("desired_distance", 0.5)
         self.declare_parameter('using_real_car', True)
 
         # Fetch constants from the ROS parameter server
