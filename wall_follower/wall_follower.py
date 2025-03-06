@@ -26,9 +26,9 @@ class WallFollower(Node):
         # DO NOT MODIFY THIS! 
         self.declare_parameter("scan_topic", "/scan")
         self.declare_parameter("drive_topic", "/vesc/high_level/input/nav_0")
-        self.declare_parameter("side", 1)
+        self.declare_parameter("side", -1)
         self.declare_parameter("velocity", 1.0)
-        self.declare_parameter("desired_distance", 0.5)
+        self.declare_parameter("desired_distance", 0.75)
         self.declare_parameter('using_real_car', True)
 
         # Fetch constants from the ROS parameter server
@@ -67,8 +67,10 @@ class WallFollower(Node):
         angles=np.linspace(msg.angle_min, msg.angle_max, len(msg_arr))
 
         #angle range
-        ang_min=-np.pi/8 if self.SIDE==1 else -np.pi*3/8
-        ang_max=np.pi*3/8 if self.SIDE==1 else np.pi/8
+        # ang_min=-np.pi/8 if self.SIDE==1 else -np.pi*3/8
+        # ang_max=np.pi*3/8 if self.SIDE==1 else np.pi/8
+        ang_min = 0 if self.SIDE==1 else -np.pi/2
+        ang_max = np.pi/2 if self.SIDE==1 else 0
 
         #indices of this range
         mask=(angles>=ang_min) & (angles<=ang_max)
