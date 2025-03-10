@@ -16,7 +16,7 @@ def angle_to_index(angle, scan):
     # get an index of scan from a desired angle 
     clamped_angle = max(scan.angle_min, min(angle, scan.angle_max))
     idx = int(round((clamped_angle - scan.angle_min) / scan.angle_increment))
-    idx = max(0, min(idx, len(scan.ranges) - 1))
+    # idx = max(0, min(idx, len(scan.ranges) - 1))
     return idx
 
 def polar_to_cartesian(r, theta):
@@ -24,6 +24,7 @@ def polar_to_cartesian(r, theta):
     y = r * np.sin(theta)
     return x, y
 
+# Is this ever used???
 def ransac(points, num_iterations = 4, threshold = 0.1, min_inlier_ratio = 0.5): 
     iterations = 0 
     best_inlier_count = 0
@@ -59,8 +60,9 @@ class WallFollower(Node):
         self.declare_parameter("drive_topic", "/vesc/high_level/input/nav_0")
         self.declare_parameter("side", 1)
         self.declare_parameter("velocity", 1.0)
-        self.declare_parameter("desired_distance", 0.85)
+        self.declare_parameter("desired_distance", 0.5)
         self.declare_parameter('using_real_car', True)
+        self.declare_parameter('min_turn_radius', 0.5) # min turn radius of car in meters
 
         # Fetch constants from the ROS parameter server
         # DO NOT MODIFY THIS! This is necessary for the tests to be able to test varying parameters!
@@ -70,6 +72,7 @@ class WallFollower(Node):
         #self.SIDE = 1 #-1 right
         self.VELOCITY = self.get_parameter('velocity').get_parameter_value().double_value
         self.DESIRED_DISTANCE = self.get_parameter('desired_distance').get_parameter_value().double_value 
+        self.RADIUS = self.get_parameter('min_turn_radius').get_parameter_value().double_value 
 		
         # This activates the parameters_callback function so that the tests are able
         # to change the parameters during testing.
@@ -83,6 +86,8 @@ class WallFollower(Node):
         # publisher for the visualization of the wall follower
         self.view_publisher = self.create_publisher(LaserScan, "view_topic", 1)
         self.wall_publisher = self.create_publisher(Marker, "wall_topic", 1)
+        self.steer_publisher = self.create_publisher(Marker, "steer_topic", 1)
+
 
         # variables to store previous results 
         self.prev_error = 0
@@ -91,7 +96,7 @@ class WallFollower(Node):
         self.prev_line = None
 
         # PID control variables
-        self.Kp = 1.0
+        self.Kp = 1
         self.Ki = 0.0
         self.Kd = 0.5
 
@@ -112,30 +117,20 @@ class WallFollower(Node):
         view_msg.time_increment = scan.time_increment
         view_msg.scan_time = scan.scan_time
         view_msg.range_min = scan.range_min
-        view_msg.range_max = scan.range_max
+        view_msg.range_max = scan.range_max - 1.0
         # view_msg.ranges = scan.ranges
         view_msg.intensities = scan.intensities
 
         # Slice up the scan data in half depending on side of wall we are following ==========================
         # side = 1 means we are following the left wall, -1 means we are following the right wall
 
-        # delta = math.pi/4
-        # ang_min=-np.pi/8 if self.SIDE==1 else -np.pi*3/8
-        # ang_max=np.pi*3/8 if self.SIDE==1 else np.pi/8
         if self.SIDE == -1:
-            # wall_angle_center = -math.pi/5  # right wall
-            start_angle = -np.pi*3/8
-            # end_angle = np.pi/8
-            end_angle = -np.pi/24
+            start_angle = -np.pi*5/8
+            end_angle = np.pi/8
         else:
-            # wall_angle_center = math.pi/5   # left wall
-            # start_angle = -np.pi/8
-            # end_angle = np.pi * 3/8
-            start_angle = -np.pi/24
-            end_angle = np.pi/4
+            start_angle = -np.pi/8
+            end_angle = np.pi*5/8
             
-        # start_angle = wall_angle_center - delta
-        # end_angle = wall_angle_center + delta
 
         start_idx = angle_to_index(start_angle, scan)
         end_idx = angle_to_index(end_angle, scan)
@@ -157,12 +152,15 @@ class WallFollower(Node):
 
         if len(valid_ranges) == 0:
             distance = self.DESIRED_DISTANCE
+            angle = 0
         else: 
             # distance = np.mean(valid_ranges)
             x, y = polar_to_cartesian(valid_ranges, valid_angles)
-            slope, intercept = np.polyfit(x, y, 1) 
+            slope, intercept = np.polyfit(x, y, 1, w = 1 + (1/valid_ranges))
             VisualizationTools.plot_line(x, slope * x + intercept, self.wall_publisher, frame="/laser")
             distance = abs(intercept)/math.sqrt(1 + slope**2)
+            angle = np.arctan(slope)
+            # angle = 0
 
         # checking if there's a wall upcoming at front 
         # mid_start = angle_to_index(-math.pi/15, scan)
@@ -217,8 +215,14 @@ class WallFollower(Node):
         # PID ================================================================================
         self.integral += error * dt
         derivative = (error - self.prev_error) / dt
-        control = self.Kp * error + self.Ki * self.integral + self.Kd * derivative
-        steering_angle = -self.SIDE * control
+        control = self.Kp * error + self.Ki * self.integral + self.Kd * derivative * (0.75 + 0.25*error/(error + self.RADIUS))
+        steering_angle = -self.SIDE * control + angle
+
+
+        VisualizationTools.plot_line([0.0, np.cos(steering_angle)], [0.0, np.sin(steering_angle)], self.steer_publisher, frame="/laser", color = (1.0, 1.0, 0.0))
+        self.get_logger().info(f"Steering={steering_angle*180/np.pi}, Error = {error} m")
+
+
 
         # update for next iteration 
         self.prev_error = error 
@@ -235,7 +239,6 @@ class WallFollower(Node):
         # print desired vs results 
         # self.get_logger().info(f"Side: {self.SIDE}")
         # self.get_logger().info(f"Desired distance: {self.DESIRED_DISTANCE}, Actual distance: {distance}, Error: {error}, Steering angle: {steering_angle}")
-    
     
     def parameters_callback(self, params):
         """
