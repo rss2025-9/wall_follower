@@ -27,10 +27,10 @@ class WallFollower(Node):
         # Declare parameters to make them available for use
         # DO NOT MODIFY THIS! 
         self.declare_parameter("scan_topic", "/scan")
-        self.declare_parameter("drive_topic", "/vesc/high_level/input/nav_1")
+        self.declare_parameter("drive_topic", "/vesc/high_level/input/nav_0")
         self.declare_parameter("side", -1)
-        self.declare_parameter("velocity", 1)
-        self.declare_parameter("desired_distance", 0.5)
+        self.declare_parameter("velocity", 2.0)
+        self.declare_parameter("desired_distance", 0.75)
         self.declare_parameter('using_real_car', True)
 
         # Fetch constants from the ROS parameter server
@@ -128,7 +128,7 @@ class WallFollower(Node):
         self.prev_error=error
 
         # Writing to wall follower data spreadsheet
-        self.wall_follower_data_records.append([self.current_time, self.DESIRED_DISTANCE, dist_to_wall, error, self.VELOCITY])
+        self.wall_follower_data_records.append([self.current_time, self.DESIRED_DISTANCE, round(dist_to_wall,2), round(error,2), self.VELOCITY])
         self.current_time += 1 
 
         # Write to file every 10 records
