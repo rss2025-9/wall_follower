@@ -1,6 +1,6 @@
 <launch>
-  <!-- Launch the wall follower -->
-  <node pkg="wall_follower" name="wall_follower" exec="wall_follower" output="screen">
+  <!-- Launch the drive in a straight line node -->
+  <node pkg="wall_follower" name="run_straight" exec="run_straight" output="screen">
   </node>
   
   <!-- Launch safety controller -->
