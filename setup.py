@@ -29,6 +29,7 @@ setup(
 	        'viz_example = wall_follower.viz_example:main',
         	'test_wall_follower = wall_follower.test_wall_follower:main',
             'example = wall_follower.example:main',
+            'run_straight = wall_follower.run_straight:main'
         ],
     },
 )

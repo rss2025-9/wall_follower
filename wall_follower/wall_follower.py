@@ -45,7 +45,7 @@ class WallFollower(Node):
         # This activates the parameters_callback function so that the tests are able
         # to change the parameters during testing.
         # DO NOT MODIFY THIS! 
-        # self.add_on_set_parameters_callback(self.parameters_callback)
+        self.add_on_set_parameters_callback(self.parameters_callback)
 
         #ADDED subscribe to lidar data (subscibe to SCN_TOPIC), listens for messages of type LaserScan, when msg arrives lidar_callback called
         self.subscription=self.create_subscription(LaserScan, self.SCAN_TOPIC, self.lidar_callback, 1)
@@ -56,7 +56,7 @@ class WallFollower(Node):
         self.line_pub = self.create_publisher(Marker, "wall", 1)
 
         # File for wall follower data collection
-        self.wall_follower_data = "wall_follower_data.csv"
+        self.wall_follower_data = "wall_follower_data.csv" 
         if not os.path.exists(self.wall_follower_data):
             with open(self.wall_follower_data, mode="w", newline="") as file:
                 writer = csv.writer(file)
