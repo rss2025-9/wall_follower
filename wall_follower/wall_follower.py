@@ -29,7 +29,7 @@ class WallFollower(Node):
         self.declare_parameter("scan_topic", "/scan")
         self.declare_parameter("drive_topic", "/vesc/high_level/input/nav_0")
         self.declare_parameter("side", -1)
-        self.declare_parameter("velocity", 2.0)
+        self.declare_parameter("velocity", 1.5)
         self.declare_parameter("desired_distance", 0.75)
         self.declare_parameter('using_real_car', True)
 
@@ -79,7 +79,6 @@ class WallFollower(Node):
         # angle range
         ang_min=-np.pi/8 if self.SIDE==1 else -np.pi*3/8
         ang_max=np.pi*3/8 if self.SIDE==1 else np.pi/8
-        
 
         #indices of this range
         mask=(angles>=ang_min) & (angles<=ang_max)
@@ -123,6 +122,27 @@ class WallFollower(Node):
             steer_ang=self.kp*error+self.kd*slope 
         else:
             steer_ang=-(self.kp*error+self.kd*-slope)
+
+        # mid angle range 
+        mid_ang_min = -np.pi/8 
+        mid_ang_max = np.pi/8
+
+        mid_mask=(angles>=mid_ang_min) & (angles<=mid_ang_max)
+        selected_mid_angles=angles[mid_mask]
+        selected_mid_ranges=msg_arr[mid_mask]
+
+        valid_mid_mask=(selected_mid_ranges>msg.range_min) & (selected_mid_ranges<4.0) 
+        selected_mid_angles=selected_mid_angles[valid_mid_mask]
+        selected_mid_ranges=selected_mid_ranges[valid_mid_mask]
+
+        if len(selected_mid_ranges) != 0: 
+            closest_mid_point = np.mean(selected_mid_ranges)
+            if closest_mid_point >= 2.0: 
+                self.VELOCITY = 1.5
+            elif closest_mid_point >= 1.0: 
+                self.VELOCITY = 1.25
+            else: 
+                self.VELOCITY = 1.0 
 
         self.publish_drive_command(steer_ang)
         self.prev_error=error

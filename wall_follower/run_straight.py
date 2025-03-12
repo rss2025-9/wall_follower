@@ -16,7 +16,7 @@ class RunStraight(Node):
 
         # ROS Parameters 
         self.declare_parameter("drive_topic", "/vesc/high_level/input/nav_0")
-        self.declare_parameter("velocity", 2.0)
+        self.declare_parameter("velocity", 1.0)
 
         # Fetch constants from the ROS parameter server
         # DO NOT MODIFY THIS! This is necessary for the tests to be able to test varying parameters!
@@ -29,30 +29,11 @@ class RunStraight(Node):
         # self.add_on_set_parameters_callback(self.parameters_callback)
 
         #ADDED publish drive,  publishes msgs of type AckermannDriveStamped to topic DRIVE_TOPIC
-        self.drive_pub=self.create_publisher(AckermannDriveStamped, self.DRIVE_TOPIC, 10)
-    
-    def lidar_callback(self, scan):
-        self.publish_drive_command(0)
+        timer_period = 0.05
+        self.timer = self.create_timer(timer_period, self.publish_drive_command(0.0))
+        self.drive_pub=self.create_publisher(AckermannDriveStamped, self.DRIVE_TOPIC, 1)
 
     def publish_drive_command(self, steer_ang):
-        #max_steer_ang=0.5  #something reasonable
-        #steer_ang=np.clip(steer_ang, -max_steer_ang, max_steer_ang) #limits range of steering ang to [-max,max]
-        # msg=AckermannDriveStamped() #message of type AckermannDriveStamped()
-        # #set
-        # base_speed = self.VELOCITY 
-        # min_speed = 1.0 
-        # max_speed = 3.0
-        # steer_thresh = 0.3
-
-        # if abs(steer_ang) > steer_thresh:
-        #     drive_speed = max(min_speed, base_speed * (1 - abs(steer_ang)))
-        # else:
-        #     drive_speed = min(max_speed, base_speed * 1.2)
-        # msg.drive.speed = drive_speed 
-        # msg.drive.steering_angle=steer_ang
-        # #publish msg (steering ang an speed) to /drive topic
-        # self.drive_pub.publish(msg)
-
         msg=AckermannDriveStamped() #message of type AckermannDriveStamped()
         #set
         msg.drive.speed=self.VELOCITY
@@ -60,24 +41,24 @@ class RunStraight(Node):
         #publish msg (steering ang an speed) to /drive topic
         self.drive_pub.publish(msg)
     
-    def parameters_callback(self, params):
-        """
-        DO NOT MODIFY THIS CALLBACK FUNCTION!
+    # def parameters_callback(self, params):
+    #     """
+    #     DO NOT MODIFY THIS CALLBACK FUNCTION!
         
-        This is used by the test cases to modify the parameters during testing. 
-        It's called whenever a parameter is set via 'ros2 param set'.
-        """
-        for param in params:
-            if param.name == 'side':
-                self.SIDE = param.value
-                self.get_logger().info(f"Updated side to {self.SIDE}")
-            elif param.name == 'velocity':
-                self.VELOCITY = param.value
-                self.get_logger().info(f"Updated velocity to {self.VELOCITY}")
-            elif param.name == 'desired_distance':
-                self.DESIRED_DISTANCE = param.value
-                self.get_logger().info(f"Updated desired_distance to {self.DESIRED_DISTANCE}")
-        return SetParametersResult(successful=True)
+    #     This is used by the test cases to modify the parameters during testing. 
+    #     It's called whenever a parameter is set via 'ros2 param set'.
+    #     """
+    #     for param in params:
+    #         if param.name == 'side':
+    #             self.SIDE = param.value
+    #             self.get_logger().info(f"Updated side to {self.SIDE}")
+    #         elif param.name == 'velocity':
+    #             self.VELOCITY = param.value
+    #             self.get_logger().info(f"Updated velocity to {self.VELOCITY}")
+    #         elif param.name == 'desired_distance':
+    #             self.DESIRED_DISTANCE = param.value
+    #             self.get_logger().info(f"Updated desired_distance to {self.DESIRED_DISTANCE}")
+    #     return SetParametersResult(successful=True)
 
 
 def main():
